@@ -57,6 +57,8 @@ WITH "InventarioSerializable" AS (
         mi."Cod_Bodega",
         mi."Cod_SerieProducto",
         mi."Cod_Producto",
+        OITM."U_Familia" AS "Cod_FamiliaProducto",
+        OITMFAM."Name" AS "Nombre_FamiliaProducto",
         mi."Flag_Direccion",
         mi."Cod_TipoTransaccion",
         mi."Cod_Documento",
@@ -72,8 +74,12 @@ WITH "InventarioSerializable" AS (
             ELSE TO_VARCHAR(NULL, 'YYYYMMDD')
         END AS "Id_FechaTransferencia",
         COALESCE(WTR1."ItemCode", '') AS "Cod_ProductoTransferencia",
-        COALESCE(OIGE."FolioNum", OIGN."FolioNum", OWTR."FolioNum", 0) AS "Ext_NroFolioDocumento",
-        COALESCE(TO_VARCHAR(OIGE."DocDate", 'YYYYMMDD'), TO_VARCHAR(OIGN."DocDate", 'YYYYMMDD'), TO_VARCHAR(OWTR."DocDate", 'YYYYMMDD')) AS "Ext_FechaDocumento",
+        COALESCE(OIGE."FolioNum", OIGN."FolioNum", OWTR."FolioNum", '0') AS "Ext_NroFolioDocumento",
+        COALESCE(
+            TO_VARCHAR(OIGE."DocDate", 'YYYYMMDD'),
+            TO_VARCHAR(OIGN."DocDate", 'YYYYMMDD'),
+            TO_VARCHAR(OWTR."DocDate", 'YYYYMMDD')
+        ) AS "Ext_FechaDocumento",
         COALESCE(OIGE."DocSubType", OIGN."DocSubType", OWTR."DocSubType", '0') AS "Ext_SubTipoDocumento",
         mi."Flag_ProductoSerializable",
         CAST(mi."Cant_SaldoInventarioBodegaProductoSerie" AS DECIMAL(19,6)) AS "Cant_SaldoInventarioBodegaProductoSerie",
@@ -109,6 +115,40 @@ WITH "InventarioSerializable" AS (
     LEFT JOIN "TECNOFAST"."OWTR" ON mi."Cod_Documento" = OWTR."DocEntry" AND mi."Cod_TipoTransaccion" = 67
     LEFT JOIN "TECNOFAST"."WTR1" ON OWTR."DocEntry" = WTR1."DocEntry" AND WTR1."LineNum" = mi."BaseLinNum"
     LEFT JOIN "TECNOFAST"."ORDR" ORDR_OWTR ON WTR1."U_COriginal" = ORDR_OWTR."DocEntry"
+    LEFT JOIN "TECNOFAST"."OITM" ON mi."Cod_Producto" = OITM."ItemCode"
+    LEFT JOIN "TECNOFAST"."@OITMFAM" AS OITMFAM ON OITM."U_Familia" = OITMFAM."Code"
 )
-SELECT * FROM "MovimientoInventarioFinal"
-ORDER BY "Id_FechaMovimiento", "Cod_Producto", "Cod_SerieProducto";
+SELECT 
+    "Cod_Bodega",
+    "Cod_SerieProducto",
+    "Cod_Producto",
+    "Cod_FamiliaProducto",
+    "Nombre_FamiliaProducto",
+    "Flag_Direccion",
+    "Cod_TipoTransaccion",
+    "Cod_Documento",
+    "Cant_MovInventario",
+    "Id_FechaMovimiento",
+    "Cod_SocioNegocio",
+    "Txt_SuppSerial",
+    "Flag_MovimientoSerializable",
+    "Id_FechaTransferencia",
+    "Cod_ProductoTransferencia",
+    "Ext_NroFolioDocumento",
+    "Ext_FechaDocumento",
+    "Ext_SubTipoDocumento",
+    "Flag_ProductoSerializable",
+    "Cant_SaldoInventarioBodegaProductoSerie",
+    "Ext_CodContrato",
+    "Ext_NroContrato",
+    "Cod_FilialEmpresa"
+FROM "MovimientoInventarioFinal"
+WHERE 
+    "Nombre_FamiliaProducto" = 'Home'
+    AND "Id_FechaMovimiento" BETWEEN 20240101 AND 20241231
+
+ORDER BY 
+    "Id_FechaMovimiento", 
+    "Cod_Producto", 
+    "Cod_SerieProducto";
+
